@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Blue Prism Pre-Migration Checklist</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8fafc;color:#0f172a;min-height:100vh;padding:20px 14px}
+  h1{font-size:18px;font-weight:700}
+  h2{font-size:15px;font-weight:700;margin-bottom:16px}
+  h3{font-size:14px;font-weight:700}
+  .wrap{max-width:780px;margin:0 auto}
+  .app-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+  .blue-bar{width:5px;height:38px;background:#2563eb;border-radius:99px;flex-shrink:0}
+  .header-text{display:flex;align-items:center;gap:10px}
+  .subtitle{font-size:12px;color:#64748b;margin-top:2px}
+  .card{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:20px 22px;margin-bottom:14px}
+  .pill{font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap}
+  .pill-draft{background:#f1f5f9;color:#64748b}
+  .pill-pending{background:#fef9c3;color:#854d0e}
+  .pill-approved{background:#dcfce7;color:#15803d}
+  .pill-rejected{background:#fee2e2;color:#b91c1c}
+  .pill-complete{background:#dbeafe;color:#1e40af}
+
+  /* Timeline */
+  .timeline{display:flex;align-items:center;margin-bottom:24px}
+  .tl-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .tl-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#e2e8f0;color:#94a3b8;transition:all .3s}
+  .tl-circle.done{background:#16a34a;color:white}
+  .tl-circle.active{background:#2563eb;color:white}
+  .tl-label{font-size:10px;color:#94a3b8;white-space:nowrap;font-weight:400}
+  .tl-label.active{color:#2563eb;font-weight:700}
+  .tl-label.done{color:#16a34a}
+  .tl-sub{font-size:9px;color:#94a3b8}
+  .tl-line{flex:1;height:2px;background:#e2e8f0;margin:0 6px;margin-bottom:22px;transition:background .3s}
+  .tl-line.done{background:#16a34a}
+
+  /* Sub-step tabs */
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{flex:1;padding:9px 4px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#94a3b8;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+  .tab.active{border-color:#2563eb;background:#2563eb;color:white}
+  .tab.done{border-color:#16a34a;background:#f0fdf4;color:#15803d}
+
+  /* View switcher */
+  .view-switcher{display:flex;gap:8px;margin-bottom:18px;align-items:center}
+  .vs-btn{padding:7px 18px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+  .vs-btn.active{background:#2563eb;color:white;border-color:#2563eb}
+  .vs-note{font-size:11px;color:#94a3b8;margin-left:4px}
+
+  /* Form inputs */
+  label.lbl{font-size:12px;font-weight:600;color:#64748b;margin-bottom:4px;display:block}
+  input[type=text],input[type=email],input[type=date],select,textarea{width:100%;padding:9px 12px;font-size:13.5px;border:1.5px solid #e2e8f0;border-radius:8px;outline:none;color:#0f172a;font-family:inherit;background:white;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:#2563eb}
+  textarea{resize:vertical}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-grid .full{grid-column:1/-1}
+
+  /* Progress bar */
+  .progress-wrap{background:#e2e8f0;border-radius:99px;height:6px}
+  .progress-bar{height:6px;border-radius:99px;transition:width .3s}
+  .progress-header{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:#64748b}
+  .progress-header span:last-child{font-weight:700}
+
+  /* Section card */
+  .section-card{background:white;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:12px;overflow:hidden}
+  .section-head{padding:11px 18px;background:#fafafa;display:flex;justify-content:space-between;align-items:center}
+  .section-head-left{display:flex;flex-direction:column;gap:2px}
+  .section-title{font-size:13.5px;font-weight:700}
+  .section-note{font-size:11px;font-weight:600}
+  .section-prog{display:flex;align-items:center;gap:8px}
+  .section-prog-bar{width:70px}
+  .section-prog-pct{font-size:11px;color:#64748b;min-width:28px}
+  .section-body{padding:4px 18px 10px}
+
+  /* YN item */
+  .yn-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+  .yn-item:last-child{border-bottom:none}
+  .yn-btns{display:flex;gap:5px;flex-shrink:0;padding-top:2px}
+  .yn-btn{width:36px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;transition:all .12s;background:white;color:#94a3b8;font-family:inherit}
+  .yn-btn.sel-Y{border-color:#16a34a;background:#dcfce7;color:#16a34a}
+  .yn-btn.sel-N{border-color:#dc2626;background:#fee2e2;color:#dc2626}
+  .yn-btn.sel-NA{border-color:#94a3b8;background:#f1f5f9;color:#64748b}
+  .yn-btn:disabled{opacity:0.65;cursor:default}
+  .yn-label{font-size:13px;color:#334155;line-height:1.55}
+
+  /* Creds */
+  .creds-section{margin-top:10px;padding-top:8px;border-top:1px dashed #e2e8f0}
+  .cred-list-title{font-size:12px;color:#64748b;font-weight:600;margin-bottom:6px}
+  .cred-item{display:flex;gap:6px;margin-bottom:4px;align-items:center}
+  .cred-tag{font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;color:#334155;flex:1}
+  .cred-remove{font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer}
+  .cred-add-row{display:flex;gap:6px;margin-top:6px}
+  .cred-add-row input{flex:1;font-size:12px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;outline:none;font-family:inherit}
+
+  /* Stats row */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .stat-card{background:#f8fafc;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0}
+  .stat-label{font-size:11px;color:#64748b;margin-bottom:2px}
+  .stat-val{font-size:22px;font-weight:700}
+
+  /* Fail list */
+  .fail-box{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;margin-bottom:16px}
+  .fail-box-title{font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:6px}
+  .fail-box p{font-size:12px;color:#7f1d1d;margin-bottom:3px}
+
+  /* Info summary */
+  .info-summary{background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}
+  .info-row{display:flex;gap:10px;margin-bottom:4px}
+  .info-key{font-size:12px;color:#64748b;min-width:90px}
+  .info-val{font-size:12px;font-weight:600;color:#0f172a}
+
+  /* Buttons */
+  .btn{padding:10px 20px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;border:none}
+  .btn-primary{background:#2563eb;color:white}
+  .btn-primary:hover{background:#1d4ed8}
+  .btn-ghost{background:white;color:#64748b;border:1.5px solid #e2e8f0}
+  .btn-ghost:hover{background:#f8fafc}
+  .btn-success{background:#16a34a;color:white}
+  .btn-success:hover{background:#15803d}
+  .btn-success:disabled{opacity:0.5;cursor:default}
+  .btn-danger{background:#dc2626;color:white}
+  .btn-danger:hover{background:#b91c1c}
+  .btn-danger:disabled{opacity:0.45;cursor:default}
+  .btn-row{display:flex;gap:10px;margin-top:4px}
+  .btn-flex{flex:1}
+
+  /* Approver banner */
+  .ap-banner{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:14px}
+  .ap-banner-title{font-size:13px;font-weight:700;color:#92400e;margin-bottom:2px}
+  .ap-banner-sub{font-size:12px;color:#78350f}
+  .ap-hint{font-size:11px;color:#dc2626;text-align:center;margin-top:8px}
+
+  /* Approval note banner */
+  .reject-banner{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 14px;margin-bottom:18px}
+  .reject-title{font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:4px}
+  .reject-note{font-size:12px;color:#7f1d1d;white-space:pre-wrap}
+
+  /* Success / waiting banners */
+  .wait-box{text-align:center;padding:40px 24px}
+  .wait-icon{font-size:36px;margin-bottom:12px}
+  .wait-title{font-size:16px;font-weight:700;margin-bottom:8px}
+  .wait-sub{font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6}
+  .wait-hint{font-size:11px;color:#94a3b8;margin-top:24px}
+  .success-box{text-align:center;padding:48px 24px}
+  .success-icon{font-size:44px;margin-bottom:12px}
+  .success-title{font-size:18px;font-weight:700;margin-bottom:6px}
+  .success-sub{font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6}
+
+  /* Post approval banner */
+  .approved-banner{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .approved-banner-icon{font-size:20px}
+  .approved-banner-title{font-size:13px;font-weight:700;color:#15803d}
+  .approved-banner-sub{font-size:12px;color:#166534}
+  .locked-label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:8px 0}
+
+  /* Divider */
+  .divider{border:none;border-top:1px solid #e2e8f0;margin:16px 0}
+  .hidden{display:none!important}
+
+  @media(max-width:520px){
+    .form-grid{grid-template-columns:1fr}
+    .form-grid .full{grid-column:1}
+    .stats-row{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="header-text">
+      <div class="blue-bar"></div>
+      <div>
+        <h1>Blue Prism Migration Checklist</h1>
+        <div class="subtitle">Pre-migration preparation &amp; approval workflow</div>
+      </div>
+    </div>
+    <span id="status-pill" class="pill pill-draft">Draft</span>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline" id="timeline"></div>
+
+  <!-- View switcher (shown only in approval phase) -->
+  <div class="view-switcher hidden" id="view-switcher">
+    <button class="vs-btn active" id="btn-view-sub" onclick="setView('submitter')">Submitter view</button>
+    <button class="vs-btn" id="btn-view-ap" onclick="setView('approver')">Approver view</button>
+    <span class="vs-note">— switch to simulate the approver's screen</span>
+  </div>
+
+  <!-- Main content area -->
+  <div id="app"></div>
+
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const PRE_SECTIONS = [
+  { id:"dev_package", label:"Dev Package Review", color:"#2563eb", note:"Pre-migration", items:[
+    {id:"bp_proc", label:"Business Process"},
+    {id:"bp_obj",  label:"Business Objects"},
+    {id:"queues",  label:"Queues"},
+    {id:"ev_pre",  label:"Environment Variables"},
+    {id:"cals",    label:"(If applicable) Calendars"},
+    {id:"no_otc",  label:"Package does not contain OTC Shared Objects (unless explicitly required)"},
+  ]},
+  { id:"migration_ticket", label:"Migration Ticket", color:"#0f172a", items:[
+    {id:"uat",         label:"UAT Sign Off received from the business and attached to ticket (Old Approval)"},
+    {id:"otc_cl",      label:"OTC Migration Checklist Attached (Dev → QA section populated)"},
+    {id:"bp_cl",       label:"BP VirtOps Migration Checklist Attached (Dev → QA section populated)"},
+    {id:"blackbox",    label:"Dev Black Box successful run screenshot attached (5 runs AFTER last business process modification date)"},
+    {id:"ticket_done", label:"Migration ticket created"},
+  ]},
+  { id:"credentials", label:"Credentials", color:"#7c3aed", hasCreds:true, items:[
+    {id:"creds_present", label:"All required credentials confirmed to be present in QA"},
+    {id:"new_creds",     label:"New credentials were created (if applicable)"},
+    {id:"creds_updated", label:"All credentials were updated to grant permissions to the process"},
+  ]},
+  { id:"email_inbound", label:"Email Inbound", color:"#0891b2", items:[
+    {id:"subfolders", label:"Specific subfolders set up in robot mailbox account (Processed, Rejected, etc.)"},
+  ]},
+  { id:"sharepoint", label:"SharePoint Locations", color:"#059669", items:[
+    {id:"sp_output", label:"Test folder for output report created"},
+    {id:"sp_params", label:"Test folder for parameter files created"},
+    {id:"sp_config", label:"Test folder for configuration files created"},
+    {id:"sp_tech",   label:"All technical parameter and configuration files in Test Folder present and contain Test data"},
+    {id:"sp_user",   label:"All user parameters and configuration files in Test Folder present and contain Test data"},
+    {id:"sp_init",   label:"Initial output files created in Output folder if needed"},
+  ]},
+  { id:"others", label:"Others", color:"#be185d", items:[
+    {id:"other_int",  label:"Any other integration (iSara, External Systems, BAPIS, etc.) has the right permissions assigned"},
+    {id:"other_req",  label:"Any other special requirement is assigned and approved"},
+    {id:"change_log", label:"Actions tracked via the Change Log Tracker"},
+  ]},
+];
+
+const POST_SECTIONS = [
+  { id:"ev_post", label:"Environment Variables", color:"#d97706", note:"After migration", items:[
+    {id:"ev_test",    label:"Contents of environment variables confirmed to be set to 'Test' or 'QA' settings"},
+    {id:"ev_updated", label:"EV is updated according to the required Environment (when EV is not new)"},
+  ]},
+  { id:"sql", label:"SQL / Simplement / DBX", color:"#475569", note:"After migration", items:[
+    {id:"sql_perms", label:"All permissions and roles granted to the SQL user (tables, SP, Views, execution)"},
+  ]},
+];
+
+const APPROVER_CHECKS = [
+  {id:"ap_file",      label:"Migration ticket contains the complete migration file"},
+  {id:"ap_runs",      label:"Runs in the environment are attached and include today's date"},
+  {id:"ap_changelog", label:"Change Log was updated correctly"},
+  {id:"ap_form",      label:"Pre-migration form is filled with correct and complete information"},
+];
+
+const DEFAULT_CREDS = [
+  "OTC-OM-LA-Email","OTC-OM-LA-Intranet","OTC-OM-LA-RFC",
+  "OTC-OM-LA-SAP Business SSO","OTC-OM-LA-SAP Technical SSO",
+  "OTC-OM-LA-Sharepoint Client","OTC-OM-LA-Sharepoint Tenant","OTC-OM-LA-OMS Test",
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  phase: "pre",       // pre | approval | post | done
+  subStep: 1,         // 1 | 2 | 3  (within pre)
+  view: "submitter",  // submitter | approver
+  form: {
+    processName:"", projectName:"", migrationEnv:"Dev → QA",
+    ticketNumber:"", analyst:"", date: new Date().toISOString().split("T")[0],
+    submitterEmail:"", approverEmail:"", notes:"",
+  },
+  checks: {},
+  postChecks: {},
+  customCreds: [],
+  newCred: "",
+  approverName: "",
+  approverChecks: {},
+  approverNotes: "",
+  approvalStatus: null, // approved | rejected
+};
+
+// ─── RENDER ENGINE ───────────────────────────────────────────────────────────
+function render() {
+  renderTimeline();
+  renderStatusPill();
+  renderViewSwitcher();
+  const app = document.getElementById("app");
+
+  if (state.phase === "pre")      { app.innerHTML = renderPre(); bindPre(); }
+  else if (state.phase === "approval") {
+    if (state.view === "submitter") { app.innerHTML = renderWaiting(); }
+    else { app.innerHTML = renderApprover(); bindApprover(); }
+  }
+  else if (state.phase === "post") { app.innerHTML = renderPost(); bindPost(); }
+  else if (state.phase === "done") { app.innerHTML = renderDone(); }
+}
+
+// ─── TIMELINE ────────────────────────────────────────────────────────────────
+function renderTimeline() {
+  const phases = [
+    {key:"pre",      label:"Pre-Migration", sub:"Fill checklist"},
+    {key:"approval", label:"Approval",      sub:"Approver review"},
+    {key:"post",     label:"Post-Migration",sub:"After deployment"},
+    {key:"done",     label:"Complete",      sub:"All done"},
+  ];
+  const idx = phases.findIndex(p => p.key === state.phase);
+  let html = "";
+  phases.forEach((p, i) => {
+    const done   = i < idx;
+    const active = i === idx;
+    html += `<div class="tl-item">
+      <div class="tl-circle ${done?"done":active?"active":""}">${done?"✓":i+1}</div>
+      <span class="tl-label ${done?"done":active?"active":""}">${p.label}</span>
+      <span class="tl-sub">${p.sub}</span>
+    </div>`;
+    if (i < phases.length - 1)
+      html += `<div class="tl-line ${done?"done":""}"></div>`;
+  });
+  document.getElementById("timeline").innerHTML = html;
+}
+
+// ─── STATUS PILL ─────────────────────────────────────────────────────────────
+function renderStatusPill() {
+  const el = document.getElementById("status-pill");
+  let cls = "pill-draft", label = "Draft";
+  if (state.phase === "done")              { cls = "pill-complete"; label = "Complete ✓"; }
+  else if (state.approvalStatus === "approved") { cls = "pill-approved"; label = "Pre-Approved ✓"; }
+  else if (state.approvalStatus === "rejected") { cls = "pill-rejected"; label = "Pre-Failed"; }
+  else if (state.phase === "approval")     { cls = "pill-pending"; label = "Pending Approval"; }
+  el.className = "pill " + cls;
+  el.textContent = label;
+}
+
+// ─── VIEW SWITCHER ────────────────────────────────────────────────────────────
+function renderViewSwitcher() {
+  const sw = document.getElementById("view-switcher");
+  if (state.phase === "approval") {
+    sw.classList.remove("hidden");
+    document.getElementById("btn-view-sub").className = "vs-btn" + (state.view==="submitter"?" active":"");
+    document.getElementById("btn-view-ap").className  = "vs-btn" + (state.view==="approver"?" active":"");
+  } else {
+    sw.classList.add("hidden");
+  }
+}
+function setView(v) { state.view = v; render(); }
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function pct(n, total) { return total ? Math.round(n/total*100) : 0; }
+function progressBar(p, color) {
+  const c = p===100 ? "#16a34a" : color;
+  return `<div class="progress-wrap"><div class="progress-bar" style="width:${p}%;background:${c}"></div></div>`;
+}
+function progressHeader(label, answered, total, color) {
+  const p = pct(answered, total);
+  return `<div class="progress-header"><span>${label}</span><span style="color:${p===100?"#16a34a":color}">${answered}/${total} — ${p}%</span></div>${progressBar(p, color)}`;
+}
+
+function allChecks() { return {...state.checks, ...state.postChecks}; }
+function preAnswered() { return PRE_SECTIONS.reduce((a,s)=>a+s.items.filter(i=>state.checks[i.id]).length,0); }
+function preTotal()    { return PRE_SECTIONS.reduce((a,s)=>a+s.items.length,0); }
+function postAnswered(){ return POST_SECTIONS.reduce((a,s)=>a+s.items.filter(i=>state.postChecks[i.id]).length,0); }
+function postTotal()   { return POST_SECTIONS.reduce((a,s)=>a+s.items.length,0); }
+function apAnswered()  { return APPROVER_CHECKS.filter(i=>state.approverChecks[i.id]).length; }
+function apAllY()      { return APPROVER_CHECKS.every(i=>state.approverChecks[i.id]==="Y"); }
+function preFailItems(){ return PRE_SECTIONS.flatMap(s=>s.items.filter(i=>state.checks[i.id]==="N")); }
+
+// ─── SECTION CARD HTML ───────────────────────────────────────────────────────
+function sectionCard(section, checksObj, disabled) {
+  const total    = section.items.length;
+  const answered = section.items.filter(i=>checksObj[i.id]).length;
+  const p        = pct(answered, total);
+  const pColor   = p===100 ? "#16a34a" : section.color;
+  const allCreds = [...DEFAULT_CREDS, ...state.customCreds];
+
+  let items = section.items.map(item => {
+    const v = checksObj[item.id];
+    return `<div class="yn-item">
+      <div class="yn-btns">
+        ${["Y","N","N/A"].map(opt=>`<button class="yn-btn${v===opt?" sel-"+opt.replace("/",""):""}" 
+          ${disabled?"disabled":""} 
+          onclick="setCheck('${section.id}','${item.id}','${opt}')">${opt}</button>`).join("")}
+      </div>
+      <span class="yn-label">${item.label}</span>
+    </div>`;
+  }).join("");
+
+  let credsHtml = "";
+  if (section.hasCreds) {
+    credsHtml = `<div class="creds-section">
+      <div class="cred-list-title">Credentials (edit as needed per process)</div>
+      ${allCreds.map((c,i)=>`<div class="cred-item">
+        <span class="cred-tag">${c}</span>
+        ${i>=DEFAULT_CREDS.length && !disabled ? `<button class="cred-remove" onclick="removeCred(${i-DEFAULT_CREDS.length})">✕</button>` : ""}
+      </div>`).join("")}
+      ${!disabled ? `<div class="cred-add-row">
+        <input type="text" id="new-cred-input" placeholder="Add credential name..." value="${state.newCred}"
+          oninput="state.newCred=this.value" onkeydown="if(event.key==='Enter')addCred()"/>
+        <button class="btn btn-primary" style="padding:5px 12px;font-size:12px" onclick="addCred()">+ Add</button>
+      </div>` : ""}
+    </div>`;
+  }
+
+  return `<div class="section-card">
+    <div class="section-head" style="border-left:4px solid ${section.color}">
+      <div class="section-head-left">
+        <span class="section-title">${section.label}</span>
+        ${section.note ? `<span class="section-note" style="color:${section.color}">— ${section.note}</span>` : ""}
+      </div>
+      <div class="section-prog">
+        <div class="section-prog-bar">${progressBar(p,section.color)}</div>
+        <span class="section-prog-pct">${p}%</span>
+      </div>
+    </div>
+    <div class="section-body">${items}${credsHtml}</div>
+  </div>`;
+}
+
+function setCheck(sectionId, itemId, opt) {
+  const isPost = POST_SECTIONS.some(s=>s.id===sectionId);
+  if (isPost) {
+    state.postChecks[itemId] = state.postChecks[itemId]===opt ? null : opt;
+    if (!state.postChecks[itemId]) delete state.postChecks[itemId];
+  } else if (sectionId === "approver") {
+    state.approverChecks[itemId] = state.approverChecks[itemId]===opt ? null : opt;
+    if (!state.approverChecks[itemId]) delete state.approverChecks[itemId];
+  } else {
+    state.checks[itemId] = state.checks[itemId]===opt ? null : opt;
+    if (!state.checks[itemId]) delete state.checks[itemId];
+  }
+  render();
+}
+
+function addCred()   { if(state.newCred.trim()){ state.customCreds.push(state.newCred.trim()); state.newCred=""; render(); } }
+function removeCred(i){ state.customCreds.splice(i,1); render(); }
+
+// ─── PRE PHASE ───────────────────────────────────────────────────────────────
+function renderPre() {
+  const tabs = ["Process info","Checklist","Review & submit"].map((label,i)=>{
+    const n = i+1;
+    const cls = state.subStep===n ? "tab active" : state.subStep>n ? "tab done" : "tab";
+    return `<button class="${cls}" onclick="setSubStep(${n})">${state.subStep>n?"✓ ":""}${label}</button>`;
+  }).join("");
+
+  let content = "";
+  if (state.subStep===1) content = renderStep1();
+  else if (state.subStep===2) content = renderStep2();
+  else content = renderStep3();
+
+  return `<div class="tabs">${tabs}</div>${content}`;
+}
+
+function renderStep1() {
+  const f = state.form;
+  const rejBanner = state.approvalStatus==="rejected" ? `<div class="reject-banner">
+    <div class="reject-title">⚠ Pre-Failed — review approver notes before resubmitting</div>
+    ${state.approverNotes ? `<div class="reject-note">${state.approverNotes}</div>` : ""}
+  </div>` : "";
+  return `<div class="card">
+    ${rejBanner}
+    <h2>Process Information</h2>
+    <div class="form-grid">
+      <div class="full">
+        <label class="lbl">Process Name *</label>
+        <input type="text" id="f-processName" value="${f.processName}" placeholder="e.g. OTC-OM-Invoice-Processing" oninput="updateForm('processName',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Project Name</label>
+        <input type="text" id="f-projectName" value="${f.projectName}" placeholder="e.g. Order-to-Cash" oninput="updateForm('projectName',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Migration Environment</label>
+        <select id="f-migrationEnv" onchange="updateForm('migrationEnv',this.value)">
+          <option ${f.migrationEnv==="Dev → QA"?"selected":""}>Dev → QA</option>
+          <option ${f.migrationEnv==="QA → Production"?"selected":""}>QA → Production</option>
+          <option ${f.migrationEnv==="Dev → Production"?"selected":""}>Dev → Production</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Migration Ticket # *</label>
+        <input type="text" id="f-ticketNumber" value="${f.ticketNumber}" placeholder="JIRA-1234" oninput="updateForm('ticketNumber',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Analyst Name *</label>
+        <input type="text" id="f-analyst" value="${f.analyst}" placeholder="Your name" oninput="updateForm('analyst',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Date</label>
+        <input type="date" id="f-date" value="${f.date}" onchange="updateForm('date',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Your email</label>
+        <input type="email" id="f-submitterEmail" value="${f.submitterEmail}" placeholder="analyst@company.com" oninput="updateForm('submitterEmail',this.value)"/>
+      </div>
+      <div>
+        <label class="lbl">Approver email *</label>
+        <input type="email" id="f-approverEmail" value="${f.approverEmail}" placeholder="approver@company.com" oninput="updateForm('approverEmail',this.value)"/>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary" onclick="setSubStep(2)">Next: Checklist →</button>
+    </div>
+  </div>`;
+}
+
+function renderStep2() {
+  const an = preAnswered(), tot = preTotal();
+  const sections = PRE_SECTIONS.map(s=>sectionCard(s,state.checks,false)).join("");
+  return `<div class="card" style="padding:12px 16px;margin-bottom:14px">
+    ${progressHeader("Pre-migration checklist progress", an, tot, "#2563eb")}
+  </div>
+  ${sections}
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="setSubStep(1)">← Back</button>
+    <button class="btn btn-primary btn-flex" onclick="setSubStep(3)">Review & Submit →</button>
+  </div>`;
+}
+
+function renderStep3() {
+  const an = preAnswered(), tot = preTotal();
+  const yCount = Object.values(state.checks).filter(v=>v==="Y").length;
+  const fails = preFailItems();
+  const failHtml = fails.length ? `<div class="fail-box">
+    <div class="fail-box-title">⚠ Items marked N — approver will see these:</div>
+    ${fails.map(f=>`<p>✗ ${f.label}</p>`).join("")}
+  </div>` : "";
+  const f = state.form;
+  return `<div class="card">
+    <h2>Review & Submit to Approver</h2>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Answered</div><div class="stat-val" style="color:#2563eb">${an}</div></div>
+      <div class="stat-card"><div class="stat-label">Passed (Y)</div><div class="stat-val" style="color:#16a34a">${yCount}</div></div>
+      <div class="stat-card"><div class="stat-label">Failed (N)</div><div class="stat-val" style="color:${fails.length?"#dc2626":"#64748b"}">${fails.length}</div></div>
+    </div>
+    ${failHtml}
+    <div class="info-summary">
+      ${[["Process",f.processName],["Project",f.projectName],["Environment",f.migrationEnv],["Ticket",f.ticketNumber],["Analyst",f.analyst],["Approver",f.approverEmail]].map(([k,v])=>`
+        <div class="info-row"><span class="info-key">${k}</span><span class="info-val">${v||"—"}</span></div>`).join("")}
+    </div>
+    <label class="lbl">Additional notes (optional)</label>
+    <textarea rows="3" placeholder="Any extra context or blockers..." oninput="updateForm('notes',this.value)" style="margin-bottom:18px">${f.notes}</textarea>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="setSubStep(2)">← Back</button>
+      <button class="btn btn-primary btn-flex" onclick="submitToApprover()">Send to Approver →</button>
+    </div>
+  </div>`;
+}
+
+function setSubStep(n) { state.subStep = n; render(); }
+function updateForm(k, v) { state.form[k] = v; }
+
+// ─── WAITING SCREEN ───────────────────────────────────────────────────────────
+function renderWaiting() {
+  return `<div class="card wait-box">
+    <div class="wait-icon">⏳</div>
+    <div class="wait-title">Submitted — awaiting approval</div>
+    <div class="wait-sub">Your checklist for <strong>${state.form.processName}</strong> has been sent to <strong>${state.form.approverEmail}</strong>.<br/>The approver will review and either pre-approve or return with notes.</div>
+    <span class="pill pill-pending">Pending Approval</span>
+    <div class="wait-hint">Switch to "Approver view" above to simulate the review</div>
+  </div>`;
+}
+
+// ─── APPROVER SCREEN ──────────────────────────────────────────────────────────
+function renderApprover() {
+  const f = state.form;
+  const readOnlySections = PRE_SECTIONS.map(s=>sectionCard(s,state.checks,true)).join("");
+  const apItems = APPROVER_CHECKS.map(item => {
+    const v = state.approverChecks[item.id];
+    return `<div class="yn-item">
+      <div class="yn-btns">
+        ${["Y","N","N/A"].map(opt=>`<button class="yn-btn${v===opt?" sel-"+opt.replace("/",""):""}"
+          onclick="setCheck('approver','${item.id}','${opt}')">${opt}</button>`).join("")}
+      </div>
+      <span class="yn-label">${item.label}</span>
+    </div>`;
+  }).join("");
+
+  const apAns = apAnswered();
+  const allY  = apAllY();
+  const canFail    = apAns >= APPROVER_CHECKS.length && state.approverName && state.approverNotes;
+  const canApprove = allY && state.approverName;
+
+  return `<div class="ap-banner">
+    <div class="ap-banner-title">Approver Review — ${f.processName}</div>
+    <div class="ap-banner-sub">Ticket: ${f.ticketNumber} · Analyst: ${f.analyst} · ${f.migrationEnv}</div>
+  </div>
+  <div class="locked-label">Submitted checklist (read-only)</div>
+  ${readOnlySections}
+  <div class="card">
+    <h3 style="margin-bottom:4px">Approver Verification</h3>
+    <p style="font-size:12px;color:#64748b;margin-bottom:14px">Review the ticket and confirm each item:</p>
+    ${apItems}
+    <hr class="divider"/>
+    <label class="lbl">Your name (approver) *</label>
+    <input type="text" value="${state.approverName}" placeholder="Approver full name"
+      oninput="state.approverName=this.value" style="margin-bottom:10px"/>
+    <label class="lbl">Notes / what is missing (required when pre-failing)</label>
+    <textarea rows="3" placeholder="Describe what needs to be fixed before re-submission..."
+      oninput="state.approverNotes=this.value">${state.approverNotes}</textarea>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-danger btn-flex" ${canFail?"":"disabled"} onclick="doReject()">✗ Pre-Fail — Return to analyst</button>
+      <button class="btn btn-success btn-flex" ${canApprove?"":"disabled"} onclick="doApprove()">✓ Pre-Approve</button>
+    </div>
+    ${!allY && apAns===APPROVER_CHECKS.length ? `<div class="ap-hint">All items must be Y to pre-approve. Use Pre-Fail to return with notes.</div>` : ""}
+  </div>`;
+}
+
+// ─── POST PHASE ───────────────────────────────────────────────────────────────
+function renderPost() {
+  const pan = postAnswered(), ptot = postTotal();
+  const postSections = POST_SECTIONS.map(s=>sectionCard(s,state.postChecks,false)).join("");
+  const preLocked    = PRE_SECTIONS.map(s=>sectionCard(s,state.checks,true)).join("");
+  const pp = pct(pan, ptot);
+  const canComplete = pp === 100;
+  return `<div class="approved-banner">
+    <div class="approved-banner-icon">✓</div>
+    <div>
+      <div class="approved-banner-title">Pre-approved by ${state.approverName} — migration can proceed</div>
+      <div class="approved-banner-sub">Complete the post-migration items below after deploying to the environment.</div>
+    </div>
+  </div>
+  <div class="card" style="padding:12px 16px;margin-bottom:14px">
+    ${progressHeader("Post-migration completion", pan, ptot, "#d97706")}
+  </div>
+  ${postSections}
+  <div class="locked-label" style="margin-top:8px">Pre-migration items (locked)</div>
+  ${preLocked}
+  <button class="btn btn-success" style="width:100%;padding:13px 0;font-size:14px;margin-top:4px"
+    ${canComplete?"":"disabled"} onclick="doComplete()">
+    ${canComplete ? "✓ Mark as Complete & Send Final Summary" : `Complete all post-migration items first (${pp}%)`}
+  </button>`;
+}
+
+// ─── DONE PHASE ───────────────────────────────────────────────────────────────
+function renderDone() {
+  return `<div class="card success-box">
+    <div class="success-icon">🎉</div>
+    <h2>Migration checklist complete!</h2>
+    <div class="success-sub"><strong>${state.form.processName}</strong> has passed all pre and post-migration checks.<br/>Final summary sent to <strong>${state.form.approverEmail}</strong>.</div>
+    <span class="pill pill-complete">Complete ✓</span><br/>
+    <button class="btn btn-ghost" style="margin-top:24px;font-size:12px" onclick="resetAll()">Start new migration checklist</button>
+  </div>`;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function buildEmailBody(status) {
+  const f = state.form;
+  const ac = {...state.checks,...state.postChecks};
+  const allCreds = [...DEFAULT_CREDS,...state.customCreds];
+  const fails = [...PRE_SECTIONS,...POST_SECTIONS].flatMap(s=>s.items.filter(i=>ac[i.id]==="N").map(i=>`[${s.label}] ${i.label}`));
+  let b = `BLUE PRISM PRE-MIGRATION CHECKLIST SUMMARY\n${"=".repeat(52)}\n\n`;
+  b += `Process:     ${f.processName}\nProject:     ${f.projectName}\nMigration:   ${f.migrationEnv}\nTicket:      ${f.ticketNumber}\nAnalyst:     ${f.analyst}\nDate:        ${f.date}\nStatus:      ${status.toUpperCase()}\n\n`;
+  [...PRE_SECTIONS,...POST_SECTIONS].forEach(s=>{
+    b += `▌ ${s.label.toUpperCase()}${s.note?` (${s.note})`:""}\n`;
+    s.items.forEach(i=>{ const v=ac[i.id]||"—"; b+=`  [${v==="Y"?"✓":v==="N"?"✗":v}] ${i.label}\n`; });
+    if(s.hasCreds){ b+=`\n  Credentials:\n`; allCreds.forEach(c=>b+=`    • ${c}\n`); }
+    b+="\n";
+  });
+  if(state.approverName){ b+=`${"─".repeat(52)}\nAPPROVER REVIEW — ${state.approverName}\n`; APPROVER_CHECKS.forEach(i=>{ const v=state.approverChecks[i.id]||"—"; b+=`  [${v==="Y"?"✓":v==="N"?"✗":v}] ${i.label}\n`; }); if(state.approverNotes)b+=`\nNotes:\n${state.approverNotes}\n`; b+="\n"; }
+  if(fails.length){ b+=`${"─".repeat(52)}\nFAILED ITEMS:\n`; fails.forEach(f=>b+=`  ✗ ${f}\n`); b+="\n"; }
+  if(f.notes)b+=`${"─".repeat(52)}\nADDITIONAL NOTES:\n${f.notes}\n\n`;
+  b+=`${"─".repeat(52)}\nGenerated: ${new Date().toLocaleString()}`;
+  return b;
+}
+
+function openEmail(to, status) {
+  const sub  = encodeURIComponent(`[BP Migration] ${state.form.processName} — ${state.form.migrationEnv} — ${state.form.ticketNumber}`);
+  const body = encodeURIComponent(buildEmailBody(status));
+  window.open(`mailto:${to}?subject=${sub}&body=${body}`);
+}
+
+function submitToApprover() { openEmail(state.form.approverEmail, "submitted"); state.phase="approval"; state.view="submitter"; render(); }
+function doApprove()        { state.approvalStatus="approved"; openEmail(state.form.submitterEmail,"approved"); state.phase="post"; state.view="submitter"; render(); }
+function doReject()         { state.approvalStatus="rejected"; openEmail(state.form.submitterEmail,"rejected"); state.phase="pre"; state.subStep=2; state.view="submitter"; render(); }
+function doComplete()       { openEmail(state.form.approverEmail,"complete"); state.phase="done"; render(); }
+
+function bindPre() {}    // event handlers are inline
+function bindPost() {}
+function bindApprover() {}
+
+function resetAll() {
+  state = { phase:"pre", subStep:1, view:"submitter",
+    form:{ processName:"", projectName:"", migrationEnv:"Dev → QA", ticketNumber:"", analyst:"", date:new Date().toISOString().split("T")[0], submitterEmail:"", approverEmail:"", notes:"" },
+    checks:{}, postChecks:{}, customCreds:[], newCred:"",
+    approverName:"", approverChecks:{}, approverNotes:"", approvalStatus:null };
+  render();
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
