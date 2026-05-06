@@ -588,7 +588,7 @@ function renderSuccess(){
 
     <div class="tracker-note">
       ℹ️ Request <strong>${state.requestId}</strong> logged on ${new Date().toLocaleDateString()}<br/>
-      Columns: Request ID · Package Name · RITM # · Migration Owner · Approver · Peer Approver · Date · Status · Pre% · Failed Items · Date Submitted
+      Columns: Request ID · Package Name · RITM # · Migration Owner · Approver · Peer Approver · Date · Failed Items
     </div>
   </div>`;
 }
@@ -596,8 +596,6 @@ function renderSuccess(){
 function buildTrackerRow(){
   const f = state.form;
   const fails = failItems().map(i=>i.label).join("; ")||"None";
-  const p = pct(preAns(), preTot());
-  const now = new Date().toLocaleDateString();
   const cols = [
     {header:"Request ID",        value: state.requestId},
     {header:"Package Name",      value: f.packageName},
@@ -606,10 +604,7 @@ function buildTrackerRow(){
     {header:"Migration Approver",value: f.migrationApprover},
     {header:"Approver Peer",     value: f.approverPeerEmail},
     {header:"Date",              value: f.date},
-    {header:"Status",            value: "Submitted"},
-    {header:"Pre-Migration %",   value: p+"%"},
     {header:"Failed Items",      value: fails},
-    {header:"Date Submitted",    value: now},
   ];
   // Store TSV in state so copyRow reads from here, never from the DOM
   state._trackerTSV = cols.map(c=>c.value).join("\t");
@@ -682,17 +677,6 @@ function renderPost(){
 }
 
 function doPostComplete(){
-  const f   = state.form;
-  const to  = encodeURIComponent(f.approverPeerEmail);
-  const cc  = encodeURIComponent(f.migrationApprover);
-  const sub = encodeURIComponent(`[BP Migration - Complete] ${f.packageName} — ${f.ritm} — Request ${state.requestId}`);
-  const body= encodeURIComponent(buildPostEmail());
-  const a   = document.createElement("a");
-  a.href    = `mailto:${to}?cc=${cc}&subject=${sub}&body=${body}`;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>document.body.removeChild(a), 1000);
   state.phase="done";
   render();
 }
